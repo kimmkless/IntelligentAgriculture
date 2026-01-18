@@ -1,0 +1,233 @@
+"""
+MQTT处理模块 - 处理MQTT连接和数据接收
+"""
+import paho.mqtt.client as mqtt
+import json
+import logging
+import threading
+import time
+import subprocess
+import socket
+import platform
+from datetime import datetime
+from typing import Optional, Dict, Any
+
+logger = logging.getLogger(__name__)
+
+
+class MQTTHandler:
+    """MQTT处理器"""
+
+    def __init__(self, broker_ip: str = None, port: int = 1883, db_instance=None):
+        """初始化MQTT处理器"""
+        self.broker_ip = broker_ip or self._get_local_ip()
+        self.port = port
+        self.db_instance = db_instance
+        self.client = None
+        self.running = False
+        self.thread = None
+
+        # MQTT配置
+        self.topic = "$oc/devices/SmartAgriculture_thermometer/sys/properties/report"
+        self.device_config = {
+            "username": "SmartAgriculture_thermometer",
+            "password": "7884a00e068ff526da5230dbedb909de09e0f377f9093e1bbad3098c3d666865"
+        }
+
+    def _get_local_ip(self):
+        """获取本地IP地址"""
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            ip = s.getsockname()[0]
+            s.close()
+            return ip
+        except:
+            return "127.0.0.1"
+
+    def check_mqtt_broker(self) -> bool:
+        """检查MQTT代理是否运行"""
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(2)
+            result = sock.connect_ex((self.broker_ip, self.port))
+            sock.close()
+            return result == 0
+        except Exception:
+            return False
+
+    def start_mqtt_broker(self) -> bool:
+        """启动MQTT代理（mosquitto）"""
+        system = platform.system()
+        logger.info(f"正在尝试启动MQTT代理 ({system})...")
+
+        try:
+            if system == "Windows":
+                subprocess.Popen(["mosquitto","-c", "C:\Program Files\mosquitto\mosquitto.conf", "-v"],
+                                 creationflags=subprocess.CREATE_NEW_CONSOLE)
+            elif system == "Linux":
+                subprocess.Popen(["mosquitto", "-d"])
+            elif system == "Darwin":  # macOS
+                subprocess.Popen(["mosquitto", "-d"])
+
+            # 等待启动
+            time.sleep(3)
+            if self.check_mqtt_broker():
+                logger.info("MQTT代理启动成功")
+                return True
+
+        except Exception as e:
+            logger.error(f"启动MQTT代理失败: {e}")
+
+        return False
+
+    def install_mqtt_broker(self):
+        """指导用户安装MQTT代理"""
+        system = platform.system()
+        logger.warning("MQTT代理未安装，请按以下步骤安装:")
+
+        if system == "Windows":
+            print("""
+            1. 下载mosquitto:
+               访问: https://mosquitto.org/download/
+               选择 Windows 版本下载
+
+            2. 安装步骤:
+               a. 运行安装程序
+               b. 将mosquitto添加到PATH
+               c. 安装完成后重启电脑
+
+            3. 启动mosquitto:
+               在命令提示符中运行: mosquitto -v
+            """)
+        elif system == "Linux":
+            print("""
+            安装命令:
+            sudo apt update
+            sudo apt install mosquitto mosquitto-clients
+
+            启动服务:
+            sudo systemctl start mosquitto
+            """)
+        elif system == "Darwin":  # macOS
+            print("""
+            安装命令:
+            brew install mosquitto
+
+            启动服务:
+            brew services start mosquitto
+            """)
+
+    def on_connect(self, client, userdata, flags, rc):
+        """MQTT连接回调函数"""
+        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        if rc == 0:
+            logger.info(f"成功连接到MQTT代理")
+            logger.info(f"订阅主题: {self.topic}")
+            client.subscribe(self.topic)
+
+            print(f"""
+            📋 MQTT连接信息:
+                代理地址: {self.broker_ip}:{self.port}
+                订阅主题: {self.topic}
+                客户端ID: {self.device_config['username']}
+                连接时间: {current_time}
+            """)
+
+        elif rc == 4:
+            logger.error("认证失败: 错误的用户名或密码")
+        else:
+            logger.error(f"连接失败，错误码: {rc}")
+
+    def on_message(self, client, userdata, msg):
+        """MQTT消息接收回调函数"""
+        try:
+            payload = msg.payload.decode('utf-8', errors='ignore')
+            logger.debug(f"收到MQTT消息: {msg.topic}")
+
+            # 解析数据
+            data = json.loads(payload)
+
+            # 存储到数据库
+            if self.db_instance:
+                try:
+                    data_id = self.db_instance.store_sensor_data(
+                        "SmartAgriculture_thermometer", data
+                    )
+                    logger.debug(f"数据存储成功，ID: {data_id}")
+                except Exception as e:
+                    logger.error(f"数据存储失败: {e}")
+
+            # 打印数据摘要
+            if "services" in data and len(data["services"]) > 0:
+                service_data = data["services"][0]
+                properties = service_data.get("properties", {})
+
+                print(f"""
+                📊 传感器数据 [{datetime.now().strftime('%H:%M:%S')}]:
+                    🌡️  温度: {properties.get('temperature', 'N/A')} °C
+                    💧 湿度: {properties.get('humidity', 'N/A')} %
+                    💨 PM2.5: {properties.get('PM25', 'N/A')} μg/m³
+                    💡 光照: {properties.get('light', 'N/A')} lux
+                """)
+
+        except json.JSONDecodeError:
+            logger.warning(f"收到非JSON格式数据: {payload[:100]}")
+        except Exception as e:
+            logger.error(f"处理MQTT消息失败: {e}")
+
+    def on_disconnect(self, client, userdata, rc):
+        """MQTT断开连接回调函数"""
+        if rc != 0:
+            logger.warning("连接断开，正在尝试重连...")
+
+    def start(self):
+        """启动MQTT监听"""
+        # 检查并启动MQTT代理
+        if not self.check_mqtt_broker():
+            logger.info("MQTT代理未运行，正在尝试启动...")
+            if not self.start_mqtt_broker():
+                self.install_mqtt_broker()
+                return False
+
+        # 创建MQTT客户端
+        self.client = mqtt.Client()
+        self.client.on_connect = self.on_connect
+        self.client.on_message = self.on_message
+        self.client.on_disconnect = self.on_disconnect
+        self.client.username_pw_set(
+            self.device_config["username"],
+            self.device_config["password"]
+        )
+
+        try:
+            logger.info(f"连接到MQTT代理: {self.broker_ip}:{self.port}")
+            self.client.connect(self.broker_ip, self.port, 60)
+            self.running = True
+
+            # 启动MQTT循环
+            self.client.loop_start()
+            logger.info("MQTT监听已启动")
+            return True
+
+        except Exception as e:
+            logger.error(f"MQTT连接失败: {e}")
+            return False
+
+    def start_in_background(self):
+        """在后台线程中启动MQTT监听"""
+        if self.thread and self.thread.is_alive():
+            logger.warning("MQTT监听已在运行")
+            return
+
+        self.thread = threading.Thread(target=self.start, daemon=True)
+        self.thread.start()
+
+    def stop(self):
+        """停止MQTT监听"""
+        self.running = False
+        if self.client:
+            self.client.disconnect()
+            self.client.loop_stop()
+            logger.info("MQTT监听已停止")

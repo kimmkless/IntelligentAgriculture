@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT传感器数据监控系统</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>🌱 IoT传感器数据监控系统</h1>
+                <p>实时监控农业环境传感器数据</p>
+            </div>
+            <div class="status-badge" id="systemStatus">
+                系统运行中
+            </div>
+        </div>
+
+        <div class="grid">
+            <!-- 系统概览卡片 -->
+            <div class="card">
+                <h2><i>📊</i> 系统概览</h2>
+                <div id="systemOverview">
+                    <div class="stat-item">
+                        <span class="stat-label">在线设备</span>
+                        <span class="stat-value" id="onlineDevices">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">今日数据量</span>
+                        <span class="stat-value" id="todayData">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">系统运行</span>
+                        <span class="stat-value" id="uptime">0天</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 环境数据卡片 -->
+            <div class="card">
+                <h2><i>🌡️</i> 环境数据</h2>
+                <div id="environmentData">
+                    <div class="stat-item">
+                        <span class="stat-label">温度</span>
+                        <span class="stat-value" id="temperature">-- °C</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">湿度</span>
+                        <span class="stat-value" id="humidity">-- %</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">PM2.5</span>
+                        <span class="stat-value" id="pm25">-- μg/m³</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">光照</span>
+                        <span class="stat-value" id="light">-- lux</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 通信状态卡片 -->
+            <div class="card">
+                <h2><i>📡</i> 通信状态</h2>
+                <div id="communicationStatus">
+                    <div class="stat-item">
+                        <span class="stat-label">MQTT连接</span>
+                        <span class="stat-value" id="mqttStatus">离线</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">数据完整性</span>
+                        <span class="stat-value" id="dataIntegrity">-- %</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">数据质量</span>
+                        <span class="stat-value" id="dataQuality">-- %</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 温度趋势图表 -->
+        <div class="card">
+            <h2><i>📈</i> 温度趋势</h2>
+            <div class="chart-container">
+                <canvas id="temperatureChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 最新数据表格 -->
+        <div class="card">
+            <h2><i>📋</i> 最新数据</h2>
+            <table class="data-table" id="latestData">
+                <thead>
+                    <tr>
+                        <th>时间</th>
+                        <th>设备</th>
+                        <th>温度(°C)</th>
+                        <th>湿度(%)</th>
+                        <th>PM2.5</th>
+                        <th>光照(lux)</th>
+                    </tr>
+                </thead>
+                <tbody id="dataTableBody">
+                    <!-- 数据将通过JavaScript填充 -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- API接口信息 -->
+        <div class="card">
+            <h2><i>🔌</i> API接口</h2>
+            <div class="api-info">
+                <h3>RESTful API端点</h3>
+                <div class="api-endpoint">
+                    GET /api/devices - 获取所有设备列表
+                </div>
+                <div class="api-endpoint">
+                    GET /api/data/latest?device_id={id}&limit={n} - 获取最新数据
+                </div>
+                <div class="api-endpoint">
+                    GET /api/data/history?device_id={id}&hours={h} - 获取历史数据
+                </div>
+                <div class="api-endpoint">
+                    GET /api/statistics/device/{device_id} - 获取设备统计
+                </div>
+                <div class="api-endpoint">
+                    GET /api/system/status - 获取系统状态
+                </div>
+            </div>
+        </div>
+
+        <!-- 刷新按钮 -->
+        <button class="refresh-btn" onclick="refreshData()">
+            🔄 刷新数据
+        </button>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
