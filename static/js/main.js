@@ -1,6 +1,7 @@
 // JavaScript主文件
 let temperatureChart = null;
 let systemStartTime = new Date();
+let currentHours = 24;
 
 // 页面加载时初始化
 document.addEventListener('DOMContentLoaded', function() {
@@ -11,6 +12,17 @@ document.addEventListener('DOMContentLoaded', function() {
     updateUptime();
     setInterval(updateUptime, 60000);
 });
+
+function handleTimeChange() {
+    const selector = document.getElementById('timeRange');
+    currentHours = parseFloat(selector.value); // 确保是数字
+    
+    // 视觉反馈：切换时降低图表透明度，表示正在加载
+    const canvas = document.getElementById('temperatureChart');
+    canvas.style.opacity = '0.5';
+    
+    fetchHistoryData();
+}
 
 function updateUptime() {
     const now = new Date();
@@ -52,13 +64,17 @@ function initTemperatureChart() {
                     }
                 },
                 y: {
-                    beginAtZero: false,
+                    min: 0,
+                    max: 50,
                     grid: {
                         color: '#e2e8f0'
                     },
                     title: {
                         display: true,
                         text: '温度 (°C)'
+                    },
+                    ticks: {
+                        stepSize: 5
                     }
                 }
             }
@@ -102,12 +118,21 @@ function refreshData() {
                 data.avg_quality ? `${data.avg_quality.toFixed(1)}%` : '-- %';
         });
 
-    // 获取历史数据用于图表
-    fetch('/api/data/history?device_id=SmartAgriculture_thermometer&hours=24')
+    // 获取历史数据用于图表，修改hours的取值来显示不同时间内的数据
+    fetch(`1/api/data/history?device_id=SmartAgriculture_thermometer&hours=${currentHours}`)
         .then(response => response.json())
         .then(data => {
             updateTemperatureChart(data.data);
         });
+}
+
+function fetchHistoryData() {
+    fetch(`/api/data/history?device_id=SmartAgriculture_thermometer&hours=${currentHours}`)
+        .then(response => response.json())
+        .then(data => {
+            updateTemperatureChart(data.data);
+        })
+        .catch(err => console.error("获取历史数据失败:", err));
 }
 
 function updateDataTable(data) {
@@ -131,25 +156,52 @@ function updateDataTable(data) {
 }
 
 function updateTemperatureChart(data) {
-    if (!temperatureChart || !data) return;
+    if (!temperatureChart || !data|| data.length === 0) return;
+    
+    let maxPoints;
+    if (currentHours <= 4)          maxPoints = 40;
+    else if (currentHours <= 24)    maxPoints = 60;
+    else                            maxPoints = 80; // 1周的数据
 
     const labels = [];
     const temperatures = [];
 
-    // 限制显示的数据点数量
-    const maxPoints = 20;
+
     const step = Math.max(1, Math.floor(data.length / maxPoints));
 
     for (let i = 0; i < data.length; i += step) {
         const item = data[i];
         if (item.timestamp && item.temperature !== undefined) {
             const time = new Date(item.timestamp);
-            labels.push(time.getHours() + ':' + time.getMinutes().toString().padStart(2, '0'));
+            let timeStr;
+
+            // 根据不同跨度动态格式化坐标轴
+            if (currentHours <= 4)
+                // 1-4小时：显示 时:分
+                timeStr = time.getHours() + ':' + time.getMinutes().toString().padStart(2, '0');
+            else if (currentHours <= 24)
+                // 1天：显示 月/日 时:分
+                timeStr = (time.getMonth() + 1) + '/' + time.getDate() + ' ' + time.getHours() + ':00';
+            else
+                // 1周：仅显示 月/日
+                timeStr = (time.getMonth() + 1) + '/' + time.getDate();
+            
+
+            labels.push(timeStr);
             temperatures.push(item.temperature);
         }
     }
 
+    if (currentHours >= 24) {
+        temperatureChart.data.datasets[0].pointRadius = 0;
+        temperatureChart.data.datasets[0].borderWidth = 1;
+    } else {
+        temperatureChart.data.datasets[0].pointRadius = 3;
+        temperatureChart.data.datasets[0].borderWidth = 2;
+    }
+
     temperatureChart.data.labels = labels;
     temperatureChart.data.datasets[0].data = temperatures;
-    temperatureChart.update();
+    temperatureChart.update('none');
+    document.getElementById('temperatureChart').style.opacity = '1';
 }

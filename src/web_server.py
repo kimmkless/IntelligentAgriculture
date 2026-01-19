@@ -87,7 +87,7 @@ def register_api_routes(app):
     def get_devices():
         """获取所有设备列表"""
         try:
-            cursor = db_instance.conn.cursor()
+            cursor = db_instance._get_connection().cursor()
             cursor.execute('''
                            SELECT d.*,
                                   COUNT(sd.data_id) as data_count,
@@ -102,11 +102,11 @@ def register_api_routes(app):
             for row in cursor.fetchall():
                 device = dict(row)
                 # 处理时间字段
-                if device.get('latest_data_time'):
+                if device.get('latest_data_time') and hasattr(device['latest_data_time'], 'isoformat'):
                     device['latest_data_time'] = device['latest_data_time'].isoformat()
-                if device.get('created_at'):
+                if device.get('created_at') and hasattr(device['created_at'], 'isoformat'):
                     device['created_at'] = device['created_at'].isoformat()
-                if device.get('last_seen'):
+                if device.get('last_seen') and hasattr(device['last_seen'], 'isoformat'):
                     device['last_seen'] = device['last_seen'].isoformat()
                 devices.append(device)
 
@@ -126,7 +126,7 @@ def register_api_routes(app):
             if device_id:
                 data = db_instance.get_latest_sensor_data(device_id, limit)
             else:
-                cursor = db_instance.conn.cursor()
+                cursor = db_instance._get_connection().cursor()
                 cursor.execute('''
                                SELECT *
                                FROM sensor_data
@@ -140,7 +140,7 @@ def register_api_routes(app):
 
             # 格式化时间
             for item in data:
-                if 'timestamp' in item:
+                if 'timestamp' in item and hasattr(item['timestamp'], 'isoformat'):
                     item['timestamp'] = item['timestamp'].isoformat()
 
             return jsonify({'data': data, 'count': len(data)})
@@ -149,34 +149,66 @@ def register_api_routes(app):
             logger.error(f"获取最新数据失败: {e}")
             return jsonify({'error': str(e)}), 500
 
+    # 与图表相关的部分，可能有bug
     @app.route('/api/data/history', methods=['GET'])
     def get_history_data():
-        """获取历史传感器数据"""
         try:
             device_id = request.args.get('device_id', 'SmartAgriculture_thermometer')
-            hours = int(request.args.get('hours', 24))
+            # 1. 确保 hours 转换正确
+            try:
+                hours_val = float(request.args.get('hours', 1))
+            except:
+                hours_val = 1.0
 
-            cursor = db_instance.conn.cursor()
-            start_time = datetime.now() - timedelta(hours=hours)
+            # 2. 统一时间格式：强制使用带有空格的 SQL 标准格式
+            now = datetime.now()
+            start_time_dt = now - timedelta(hours=hours_val)
+            
+            # 修复关键点：使用 strftime 而不是 isoformat()
+            start_time_str = start_time_dt.strftime('%Y-%m-%d %H:%M:%S')
+            
+            logger.info(f"正在查询设备 {device_id} 从 {start_time_str} 开始的数据")
 
-            cursor.execute('''
-                           SELECT timestamp, temperature, humidity, noise, pm25, pm10, atmospheric_pressure, light_lux
-                           FROM sensor_data
-                           WHERE device_id = ? AND timestamp >= ?
-                           ORDER BY timestamp ASC
-                           ''', (device_id, start_time.isoformat()))
+            cursor = db_instance._get_connection().cursor()
 
-            data = [dict(row) for row in cursor.fetchall()]
+            # 3. 针对不同跨度使用不同的 SQL (适配 SQLite)
+            if hours_val <= 1:
+                # 1小时：查原始数据
+                sql = "SELECT timestamp, temperature, humidity FROM sensor_data WHERE device_id = ? AND timestamp >= ? ORDER BY timestamp ASC"
+            else:
+                # 4小时/1天/1周：使用聚合
+                # 计算聚合步长（秒）：1小时内显示不聚合，4小时每5分(300s)，1天每15分(900s)，1周每2小时(7200s)
+                interval = 900 # 默认 15 分钟
+                if hours_val > 24: interval = 7200
+                elif hours_val <= 4: interval = 300
 
-            # 格式化时间
-            for item in data:
-                if 'timestamp' in item and hasattr(item['timestamp'], 'isoformat'):
-                    item['timestamp'] = item['timestamp'].isoformat()
+                # 使用 datetime(..., 'localtime') 确保聚合后的时间戳与本地时间一致
+                sql = f'''
+                    SELECT 
+                        datetime((strftime('%s', timestamp) / {interval}) * {interval}, 'unixepoch', 'localtime') as timestamp, 
+                        AVG(temperature) as temperature, 
+                        AVG(humidity) as humidity
+                    FROM sensor_data 
+                    WHERE device_id = ? AND timestamp >= ? 
+                    GROUP BY (strftime('%s', timestamp) / {interval})
+                    ORDER BY timestamp ASC
+                '''
 
-            return jsonify({'data': data, 'count': len(data)})
+            cursor.execute(sql, (device_id, start_time_str))
+            rows = cursor.fetchall()
+            
+            # 4. 转换结果
+            data = [dict(row) for row in rows]
+            
+            return jsonify({
+                'status': 'success',
+                'data': data,
+                'count': len(data),
+                'debug': {'start_time_used': start_time_str}
+            })
 
         except Exception as e:
-            logger.error(f"获取历史数据失败: {e}")
+            logger.error(f"历史数据查询失败: {e}")
             return jsonify({'error': str(e)}), 500
 
     @app.route('/api/statistics/device/<device_id>', methods=['GET'])
@@ -185,10 +217,18 @@ def register_api_routes(app):
         try:
             stats = db_instance.get_device_statistics(device_id)
 
+            stats_dict = dict(stats)
+
             # 格式化时间字段
             for time_field in ['first_record', 'last_record', 'last_seen']:
-                if time_field in stats and stats[time_field]:
-                    stats[time_field] = stats[time_field].isoformat()
+                value = stats_dict.get(time_field)
+            if value:
+                # 修复处：只有当它是 datetime 对象时才调用 isoformat()
+                if hasattr(value, 'isoformat'):
+                    stats_dict[time_field] = value.isoformat()
+                else:
+                    # 如果已经是字符串，确保它是干净的字符串
+                    stats_dict[time_field] = str(value)
 
             return jsonify(stats)
 
@@ -200,15 +240,19 @@ def register_api_routes(app):
     def get_system_status():
         """获取系统状态"""
         try:
-            cursor = db_instance.conn.cursor()
+            cursor = db_instance._get_connection().cursor()
 
             # 获取设备统计
             cursor.execute('''
-                           SELECT COUNT(*)                                       as total_devices,
-                                  SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active_devices
+                           SELECT COUNT(*)                                       as total_count,
+                                  SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active_count
                            FROM devices
                            ''')
-            device_stats = dict(cursor.fetchone())
+            row = cursor.fetchone()
+        
+            # 强制转换为 int，防止 jsonify 失败
+            total_devices = int(row['total_count']) if row['total_count'] is not None else 0
+            active_devices = int(row['active_count']) if row['active_count'] is not None else 0
 
             # 获取今日数据量
             today_start = datetime.now().replace(
@@ -225,8 +269,8 @@ def register_api_routes(app):
                 'system': 'running',
                 'database': 'connected',
                 'timestamp': datetime.now().isoformat(),
-                'total_devices': device_stats['total_devices'],
-                'active_devices': device_stats['active_devices'],
+                'total_devices': total_devices,
+                'active_devices': active_devices,
                 'today_readings': today_data
             }
 
@@ -245,7 +289,7 @@ def register_api_routes(app):
             start_time = request.args.get('start_time')
             end_time = request.args.get('end_time', datetime.now().isoformat())
 
-            cursor = db_instance.conn.cursor()
+            cursor = db_instance._get_connection().cursor()
 
             query = '''
                     SELECT timestamp, device_id, temperature, humidity, noise, pm25, pm10, atmospheric_pressure, light_lux
