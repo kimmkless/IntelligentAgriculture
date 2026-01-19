@@ -1,0 +1,33 @@
+# .dockerignore
+# 忽略不必要的文件
+.git
+.gitignore
+.vscode
+.idea
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# 测试文件
+test/
+tests/
+*.test
+*.spec
+
+# 日志文件
+logs/
+*.log
+
+# 数据文件（在 Docker 中使用卷挂载）
+data/
+
+# 操作系统文件
+.DS_Store
+Thumbs.db

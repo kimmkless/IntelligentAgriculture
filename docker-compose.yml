@@ -1,0 +1,45 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  iot-monitor:
+    build: .
+    container_name: iot-monitor
+    ports:
+      - "8080:8080"    # Web 界面
+      - "1883:1883"    # MQTT 代理
+    volumes:
+      - ./data:/app/data          # 数据持久化
+      - ./logs:/app/logs          # 日志持久化
+      - ./config:/app/config      # 配置文件
+    environment:
+      - TZ=Asia/Shanghai
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s = socket.socket(socket.AF_INET, socket.SOCK_STREAM); s.connect(('127.0.0.1', 8080)); s.close()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - iot-network
+
+  # 如果使用外部 MQTT 代理，可以添加这个服务
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: mosquitto
+    ports:
+    - "1883:1883"
+    - "9001:9001"
+    volumes:
+    - ./config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+    - ./mosquitto/data:/mosquitto/data
+    - ./mosquitto/log:/mosquitto/log
+    restart: unless-stopped
+    networks:
+    - iot-network
+
+networks:
+  iot-network:
+    driver: bridge
