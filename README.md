@@ -27,12 +27,9 @@ pip install -r requirements.txt
 
 ### 二、在服务器部署
 
-1.给脚本执行权限：
+1.给脚本执行权限并运行安装脚本：
 ```bash
 chmod +x setup-ubuntu-env.sh
-```
-2.运行安装脚本：
-```bash
 ./setup-ubuntu-env.sh
 ```
 
@@ -44,4 +41,24 @@ chmod +x setup-ubuntu-env.sh
 4.停止系统：
 ```bash
 ./stop.sh
+```
+
+### 三、错误处理
+
+1.安装python依赖时出错
+
+给修复脚本执行权限并运行脚本：
+```bash
+chmod +x fix_deps.sh
+./fix_deps.sh
+```
+
+2.安装并尝试运行mosquitto代理时出错
+
+如果出现mosquitto僵死，占用端口，或者闪退，这多半是配置不当导致的。
+
+给修复脚本执行权限并运行安装脚本：
+```bash
+chmod +x solve-mosquitto.sh
+./solve-mosquitto.sh
 ```
