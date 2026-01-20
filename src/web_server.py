@@ -19,6 +19,8 @@ logger = logging.getLogger(__name__)
 db_instance = None
 api_tokens = set()
 socketio = SocketIO()
+server_start_time = None
+mqtt_handler = None
 
 
 def create_app(db_instance_ref=None):
@@ -149,67 +151,134 @@ def register_api_routes(app):
             logger.error(f"获取最新数据失败: {e}")
             return jsonify({'error': str(e)}), 500
 
-    # 与图表相关的部分，可能有bug
+    # 与图表相关的部分
+    # 替换 get_history_data 函数
     @app.route('/api/data/history', methods=['GET'])
     def get_history_data():
+        """获取历史数据用于图表 - 修复版本"""
         try:
-            device_id = request.args.get('device_id', 'SmartAgriculture_thermometer')
-            # 1. 确保 hours 转换正确
-            try:
-                hours_val = float(request.args.get('hours', 1))
-            except:
-                hours_val = 1.0
+            from datetime import datetime, timedelta
 
-            # 2. 统一时间格式：强制使用带有空格的 SQL 标准格式
-            now = datetime.now()
-            start_time_dt = now - timedelta(hours=hours_val)
-            
-            # 修复关键点：使用 strftime 而不是 isoformat()
-            start_time_str = start_time_dt.strftime('%Y-%m-%d %H:%M:%S')
-            
-            logger.info(f"正在查询设备 {device_id} 从 {start_time_str} 开始的数据")
+            device_id = request.args.get('device_id', 'SmartAgriculture_thermometer')
+
+            # 1. 解析时间范围参数
+            time_range = request.args.get('hours', '1')
+            try:
+                hours = float(time_range)
+            except ValueError:
+                hours = 1.0
+
+            # 限制最小为0.1小时，最大为720小时（30天）
+            hours = max(0.1, min(hours, 720))
+
+            logger.info(f"查询图表数据: 设备={device_id}, 时间范围={hours}小时")
 
             cursor = db_instance._get_connection().cursor()
 
-            # 3. 针对不同跨度使用不同的 SQL (适配 SQLite)
-            if hours_val <= 1:
-                # 1小时：查原始数据
-                sql = "SELECT timestamp, temperature, humidity FROM sensor_data WHERE device_id = ? AND timestamp >= ? ORDER BY timestamp ASC"
-            else:
-                # 4小时/1天/1周：使用聚合
-                # 计算聚合步长（秒）：1小时内显示不聚合，4小时每5分(300s)，1天每15分(900s)，1周每2小时(7200s)
-                interval = 900 # 默认 15 分钟
-                if hours_val > 24: interval = 7200
-                elif hours_val <= 4: interval = 300
+            # 2. 首先获取数据库中的最新时间戳
+            cursor.execute('''
+                SELECT MAX(timestamp) as latest_time 
+                FROM sensor_data 
+                WHERE device_id = ?
+            ''', (device_id,))
 
-                # 使用 datetime(..., 'localtime') 确保聚合后的时间戳与本地时间一致
-                sql = f'''
-                    SELECT 
-                        datetime((strftime('%s', timestamp) / {interval}) * {interval}, 'unixepoch', 'localtime') as timestamp, 
-                        AVG(temperature) as temperature, 
-                        AVG(humidity) as humidity
-                    FROM sensor_data 
-                    WHERE device_id = ? AND timestamp >= ? 
-                    GROUP BY (strftime('%s', timestamp) / {interval})
-                    ORDER BY timestamp ASC
-                '''
+            latest_time_row = cursor.fetchone()
+            latest_time_str = latest_time_row['latest_time'] if latest_time_row and latest_time_row[
+                'latest_time'] else None
 
-            cursor.execute(sql, (device_id, start_time_str))
+            if not latest_time_str:
+                # 没有数据
+                logger.warning(f"设备 {device_id} 没有数据")
+                return jsonify({
+                    'status': 'success',
+                    'data': [],
+                    'count': 0,
+                    'message': '设备暂无数据'
+                })
+
+            # 3. 将数据库中的最新时间转换为datetime对象
+            # 尝试解析时间格式
+            latest_time = None
+            time_formats = [
+                '%Y-%m-%d %H:%M:%S',
+                '%Y-%m-%d %H:%M:%S.%f',
+                '%Y-%m-%dT%H:%M:%S',
+                '%Y/%m/%d %H:%M:%S'
+            ]
+
+            for fmt in time_formats:
+                try:
+                    latest_time = datetime.strptime(latest_time_str, fmt)
+                    break
+                except ValueError:
+                    continue
+
+            if not latest_time:
+                # 无法解析时间，使用当前时间
+                latest_time = datetime.now()
+                logger.warning(f"无法解析时间格式: {latest_time_str}, 使用当前时间")
+
+            # 4. 计算开始时间（相对于数据库中的最新时间）
+            start_time = latest_time - timedelta(hours=hours)
+            start_time_str = start_time.strftime('%Y-%m-%d %H:%M:%S')
+
+            logger.info(f"使用数据库最新时间: {latest_time_str}, 查询开始时间: {start_time_str}")
+
+            # 5. 查询数据（不聚合，直接获取原始数据）
+            # 使用字符串比较，因为数据库中的时间是字符串
+            cursor.execute('''
+                SELECT timestamp, temperature, humidity
+                FROM sensor_data 
+                WHERE device_id = ? AND timestamp >= ?
+                ORDER BY timestamp ASC
+            ''', (device_id, start_time_str))
+
             rows = cursor.fetchall()
-            
-            # 4. 转换结果
-            data = [dict(row) for row in rows]
-            
+
+            # 6. 处理查询结果
+            data = []
+            for row in rows:
+                if row['temperature'] is not None:
+                    # 确保时间戳是字符串格式
+                    timestamp = row['timestamp']
+                    if hasattr(timestamp, 'isoformat'):
+                        timestamp = timestamp.isoformat()
+                    elif not isinstance(timestamp, str):
+                        timestamp = str(timestamp)
+
+                    data.append({
+                        'timestamp': timestamp,
+                        'temperature': float(row['temperature']),
+                        'humidity': float(row['humidity']) if row['humidity'] is not None else None
+                    })
+
+            logger.info(f"查询完成，返回 {len(data)} 个数据点")
+
+            # 7. 如果数据点太多，进行前端聚合
+            # 这里只是设置一个标志，让前端知道需要聚合
+            needs_aggregation = len(data) > 100
+
             return jsonify({
                 'status': 'success',
                 'data': data,
                 'count': len(data),
-                'debug': {'start_time_used': start_time_str}
+                'needs_aggregation': needs_aggregation,
+                'debug': {
+                    'time_range_hours': hours,
+                    'start_time': start_time_str,
+                    'latest_time': latest_time_str,
+                    'data_points': len(data),
+                    'query_mode': 'direct_query'
+                }
             })
 
         except Exception as e:
-            logger.error(f"历史数据查询失败: {e}")
-            return jsonify({'error': str(e)}), 500
+            logger.error(f"历史数据查询失败: {e}", exc_info=True)
+            return jsonify({
+                'status': 'error',
+                'error': str(e),
+                'data': []
+            }), 500
 
     @app.route('/api/statistics/device/<device_id>', methods=['GET'])
     def get_device_statistics(device_id):
@@ -240,45 +309,200 @@ def register_api_routes(app):
     def get_system_status():
         """获取系统状态"""
         try:
+            from datetime import datetime, timedelta
+
             cursor = db_instance._get_connection().cursor()
 
             # 获取设备统计
             cursor.execute('''
-                           SELECT COUNT(*)                                       as total_count,
-                                  SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active_count
-                           FROM devices
-                           ''')
+                SELECT COUNT(*) as total_count,
+                       SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active_count
+                FROM devices
+            ''')
             row = cursor.fetchone()
-        
+
             # 强制转换为 int，防止 jsonify 失败
             total_devices = int(row['total_count']) if row['total_count'] is not None else 0
             active_devices = int(row['active_count']) if row['active_count'] is not None else 0
 
-            # 获取今日数据量
-            today_start = datetime.now().replace(
-                hour=0, minute=0, second=0, microsecond=0
-            )
+            # 获取今日数据量（修正：使用本地日期的开始时间）
+            now = datetime.now()
+            today_start = datetime(now.year, now.month, now.day, 0, 0, 0)
+
             cursor.execute('''
-                           SELECT COUNT(*) as today_readings
-                           FROM sensor_data
-                           WHERE timestamp >= ?
-                           ''', (today_start.isoformat(),))
-            today_data = cursor.fetchone()[0]
+                SELECT COUNT(*) as today_readings
+                FROM sensor_data
+                WHERE timestamp >= ?
+            ''', (today_start.isoformat(),))
+            today_row = cursor.fetchone()
+            today_data = int(today_row[0]) if today_row and today_row[0] is not None else 0
+
+            # 计算系统运行时间
+            uptime_str = "0天0小时0分0秒"
+            uptime_seconds = 0
+
+            if server_start_time:
+                uptime_delta = datetime.now() - server_start_time
+                uptime_seconds = uptime_delta.total_seconds()
+                days = int(uptime_seconds // 86400)
+                hours = int((uptime_seconds % 86400) // 3600)
+                minutes = int((uptime_seconds % 3600) // 60)
+                seconds = int(uptime_seconds % 60)
+                uptime_str = f"{days}天{hours}小时{minutes}分{seconds}秒"
+
+            # 获取MQTT状态
+            mqtt_status = "离线"
+            mqtt_stability = "--"
+            if mqtt_handler:
+                try:
+                    mqtt_info = mqtt_handler.get_connection_status()
+                    mqtt_status = "在线" if mqtt_info.get('connected', False) else "离线"
+                    mqtt_stability = mqtt_info.get('stability', '--')
+                except Exception as e:
+                    logger.error(f"获取MQTT状态失败: {e}")
+                    mqtt_status = "未知"
+
+            # 计算数据完整性（基于所有数据）
+            cursor.execute('''
+                SELECT 
+                    COUNT(*) as total,
+                    SUM(CASE WHEN temperature IS NOT NULL THEN 1 ELSE 0 END) as temp_count,
+                    SUM(CASE WHEN humidity IS NOT NULL THEN 1 ELSE 0 END) as hum_count,
+                    SUM(CASE WHEN pm25 IS NOT NULL THEN 1 ELSE 0 END) as pm25_count,
+                    SUM(CASE WHEN light_lux IS NOT NULL THEN 1 ELSE 0 END) as light_count
+                FROM sensor_data
+            ''')
+            integrity_row = cursor.fetchone()
+
+            data_integrity = 0
+            if integrity_row and integrity_row['total'] > 0:
+                total_records = integrity_row['total']
+                # 检查4个关键字段的完整性
+                field_checks = []
+                for field, count in [('temperature', integrity_row['temp_count']),
+                                     ('humidity', integrity_row['hum_count']),
+                                     ('pm25', integrity_row['pm25_count']),
+                                     ('light', integrity_row['light_count'])]:
+                    field_completeness = (count / total_records) * 100
+                    field_checks.append(field_completeness)
+
+                # 计算平均完整性
+                data_integrity = sum(field_checks) / len(field_checks) if field_checks else 0
+            else:
+                data_integrity = 0
+
+            # 计算数据质量（基于最近24小时数据）
+            one_day_ago = datetime.now() - timedelta(days=1)
+            one_day_ago_str = one_day_ago.strftime('%Y-%m-%d %H:%M:%S')
+
+            cursor.execute('''
+                SELECT 
+                    COUNT(*) as total,
+                    SUM(CASE WHEN temperature IS NOT NULL AND temperature BETWEEN -20 AND 60 THEN 1 ELSE 0 END) as valid_temp,
+                    SUM(CASE WHEN humidity IS NOT NULL AND humidity BETWEEN 0 AND 100 THEN 1 ELSE 0 END) as valid_hum,
+                    SUM(CASE WHEN pm25 IS NOT NULL AND pm25 BETWEEN 0 AND 1000 THEN 1 ELSE 0 END) as valid_pm25,
+                    SUM(CASE WHEN light_lux IS NOT NULL AND light_lux BETWEEN 0 AND 100000 THEN 1 ELSE 0 END) as valid_light
+                FROM sensor_data 
+                WHERE timestamp >= ?
+            ''', (one_day_ago_str,))
+
+            quality_row = cursor.fetchone()
+
+            data_quality = 0
+            if quality_row and quality_row['total'] > 0:
+                total_records = quality_row['total']
+                # 计算每个字段的质量分数
+                quality_scores = []
+
+                # 温度质量（-20到60度合理范围）
+                if quality_row['valid_temp'] is not None:
+                    temp_quality = (quality_row['valid_temp'] / total_records) * 100
+                    quality_scores.append(temp_quality)
+
+                # 湿度质量（0-100%合理范围）
+                if quality_row['valid_hum'] is not None:
+                    hum_quality = (quality_row['valid_hum'] / total_records) * 100
+                    quality_scores.append(hum_quality)
+
+                # PM2.5质量（0-1000合理范围）
+                if quality_row['valid_pm25'] is not None:
+                    pm25_quality = (quality_row['valid_pm25'] / total_records) * 100
+                    quality_scores.append(pm25_quality)
+
+                # 光照质量（0-100000 lux合理范围）
+                if quality_row['valid_light'] is not None:
+                    light_quality = (quality_row['valid_light'] / total_records) * 100
+                    quality_scores.append(light_quality)
+
+                # 计算平均质量分数
+                if quality_scores:
+                    data_quality = sum(quality_scores) / len(quality_scores)
+                else:
+                    data_quality = 0
+            else:
+                data_quality = 0
+
+            # 获取最新的数据更新时间
+            cursor.execute('''
+                SELECT MAX(timestamp) as last_update
+                FROM sensor_data
+            ''')
+            last_update_row = cursor.fetchone()
+            last_update = None
+
+            if last_update_row and last_update_row['last_update']:
+                last_update_value = last_update_row['last_update']
+                # 处理不同的时间格式
+                if isinstance(last_update_value, datetime):
+                    last_update = last_update_value.isoformat()
+                elif isinstance(last_update_value, str):
+                    # 如果是字符串，直接使用
+                    last_update = last_update_value
+                    # 尝试解析并重新格式化为标准格式
+                    try:
+                        # 尝试解析常见的时间格式
+                        for fmt in ['%Y-%m-%d %H:%M:%S', '%Y-%m-%dT%H:%M:%S', '%Y/%m/%d %H:%M:%S']:
+                            try:
+                                dt = datetime.strptime(last_update_value, fmt)
+                                last_update = dt.isoformat()
+                                break
+                            except ValueError:
+                                continue
+                    except Exception as e:
+                        logger.warning(f"时间格式解析失败: {last_update_value}, 错误: {e}")
+                else:
+                    last_update = str(last_update_value)
 
             status = {
                 'system': 'running',
                 'database': 'connected',
                 'timestamp': datetime.now().isoformat(),
+                'last_update': last_update,
                 'total_devices': total_devices,
                 'active_devices': active_devices,
-                'today_readings': today_data
+                'today_readings': today_data,
+                'uptime_seconds': uptime_seconds,  # 确保有这个字段
+                'uptime_str': uptime_str,  # 保留这个字段用于初始显示
+                'mqtt_status': mqtt_status,
+                'mqtt_stability': mqtt_stability,
+                'data_integrity': round(data_integrity, 1),
+                'data_quality': round(data_quality, 1),
+                'server_start_time': server_start_time.isoformat() if server_start_time else None  # 确保有这个字段
             }
 
+            logger.debug(f"系统状态: {status}")
             return jsonify(status)
 
         except Exception as e:
-            logger.error(f"获取系统状态失败: {e}")
-            return jsonify({'error': str(e), 'system': 'error'}), 500
+            logger.error(f"获取系统状态失败: {e}", exc_info=True)
+            return jsonify({
+                'error': str(e),
+                'system': 'error',
+                'today_readings': 0,
+                'uptime_str': '0天0小时0分0秒',
+                'data_integrity': 0,
+                'data_quality': 0
+            }), 500
 
     @app.route('/api/export/csv', methods=['GET'])
     @require_auth

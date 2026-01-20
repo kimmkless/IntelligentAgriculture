@@ -28,6 +28,8 @@ class MQTTHandler:
         self.client = None
         self.running = False
         self.thread = None
+        self.connected = False  # 添加连接状态
+        self.last_message_time = None  # 最后收到消息的时间
 
         # MQTT配置
         self.topic = "$oc/devices/SmartAgriculture_thermometer/sys/properties/report"
@@ -216,6 +218,7 @@ class MQTTHandler:
         current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         if rc == 0:
+            self.connected = True  # 更新连接状态
             logger.info(f"成功连接到MQTT代理")
             logger.info(f"订阅主题: {self.topic}")
             client.subscribe(self.topic)
@@ -226,11 +229,14 @@ class MQTTHandler:
                 订阅主题: {self.topic}
                 客户端ID: {self.device_config['username']}
                 连接时间: {current_time}
+                状态: 在线 ✅
             """)
 
         elif rc == 4:
+            self.connected = False
             logger.error("认证失败: 错误的用户名或密码")
         else:
+            self.connected = False
             logger.error(f"连接失败，错误码: {rc}")
 
     def on_message(self, client, userdata, msg):
@@ -238,6 +244,9 @@ class MQTTHandler:
         try:
             payload = msg.payload.decode('utf-8', errors='ignore')
             logger.debug(f"收到MQTT消息: {msg.topic}")
+
+            # 更新最后收到消息的时间
+            self.last_message_time = datetime.now()
 
             # 解析数据
             data = json.loads(payload)
@@ -272,6 +281,7 @@ class MQTTHandler:
 
     def on_disconnect(self, client, userdata, rc):
         """MQTT断开连接回调函数"""
+        self.connected = False  # 更新连接状态
         if rc != 0:
             logger.warning("连接断开，正在尝试重连...")
 
@@ -324,3 +334,26 @@ class MQTTHandler:
             self.client.disconnect()
             self.client.loop_stop()
             logger.info("MQTT监听已停止")
+
+    def get_connection_status(self):
+        """获取连接状态"""
+        status = {
+            'connected': self.connected,
+            'last_message_time': self.last_message_time.isoformat() if self.last_message_time else None,
+            'broker': f"{self.broker_ip}:{self.port}",
+            'topic': self.topic
+        }
+
+        # 计算连接稳定性
+        if self.last_message_time:
+            time_diff = (datetime.now() - self.last_message_time).total_seconds()
+            if time_diff < 60:  # 60秒内有消息
+                status['stability'] = '优秀'
+            elif time_diff < 300:  # 5分钟内有消息
+                status['stability'] = '良好'
+            else:
+                status['stability'] = '一般'
+        else:
+            status['stability'] = '无数据'
+
+        return status

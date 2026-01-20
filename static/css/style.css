@@ -190,3 +190,142 @@ body {
         text-align: center;
     }
 }
+.stat-item .stat-value {
+    color: #4a5568;
+    font-weight: bold;
+    font-size: 1.1rem;
+    transition: color 0.3s ease;
+}
+
+/* MQTT状态颜色 */
+#mqttStatus {
+    font-weight: bold;
+}
+
+/* 数据完整性指示器 */
+#dataIntegrity, #dataQuality {
+    font-weight: bold;
+}
+
+/* 系统状态徽章动画 */
+.status-badge {
+    background: #48bb78;
+    color: white;
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.status-badge::before {
+    content: "●";
+    margin-right: 8px;
+    font-size: 12px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* 时间选择器样式 */
+.time-selector select {
+    padding: 8px 15px;
+    border-radius: 8px;
+    border: 2px solid #e2e8f0;
+    background: white;
+    color: #4a5568;
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+}
+
+.time-selector select:hover {
+    border-color: #4299e1;
+}
+
+.time-selector select:focus {
+    outline: none;
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+/* 表格中的时间列 */
+.data-table td:first-child {
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    color: #718096;
+}
+
+.chart-container {
+    height: 400px;
+    margin-top: 20px;
+    position: relative;
+}
+
+.time-selector {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.time-selector select {
+    padding: 8px 15px;
+    border-radius: 8px;
+    border: 2px solid #e2e8f0;
+    background: white;
+    color: #4a5568;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 120px;
+}
+
+.time-selector select:hover:not(:disabled) {
+    border-color: #4299e1;
+}
+
+.time-selector select:focus {
+    outline: none;
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+.time-selector select:disabled {
+    background-color: #f7fafc;
+    color: #a0aec0;
+    cursor: not-allowed;
+}
+
+.card-header {
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 20px;
+}
+
+/* 图表标题样式 */
+.card-header h2 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* 数据点标签样式 */
+.chartjs-tooltip {
+    background-color: rgba(0, 0, 0, 0.8) !important;
+    border-radius: 6px !important;
+    padding: 10px !important;
+    font-family: 'Segoe UI', Arial, sans-serif !important;
+}
+
+/* 图例样式 */
+.chartjs-legend {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+}

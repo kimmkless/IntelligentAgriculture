@@ -2,7 +2,7 @@
 """
 IoT传感器数据监控系统 - 主启动程序
 """
-
+from datetime import datetime
 import sys
 import os
 import logging
@@ -23,9 +23,13 @@ def main():
     setup_logging()
     logger = logging.getLogger(__name__)
 
-    print("""
+    # 记录服务器启动时间
+    server_start_time = datetime.now()
+
+    print(f"""
     ╔══════════════════════════════════════════╗
     ║     IoT传感器数据监控系统 v1.0            ║
+    ║    启动时间: {server_start_time.strftime('%Y-%m-%d %H:%M:%S')}  ║
     ╚══════════════════════════════════════════╝
     """)
 
@@ -42,6 +46,14 @@ def main():
     # 初始化MQTT处理器
     logger.info("正在初始化MQTT处理器...")
     mqtt_handler = MQTTHandler(db_instance=db)
+
+    # 将服务器启动时间和MQTT处理器传递给Web服务器
+    from src.web_server import start_web_server
+    import src.web_server as web_server_module
+
+    # 设置全局变量
+    web_server_module.server_start_time = server_start_time
+    web_server_module.mqtt_handler = mqtt_handler
 
     # 启动MQTT监听（在后台线程）
     logger.info("启动MQTT监听...")
@@ -69,7 +81,6 @@ def main():
 
     try:
         # 启动Web服务器（主线程）
-        from src.web_server import start_web_server
         start_web_server(**config)
     except KeyboardInterrupt:
         logger.info("接收到停止信号，正在关闭服务...")
