@@ -1,6 +1,8 @@
 """
 Web服务器模块 - 提供Web界面和API
 """
+import os
+
 from flask import Flask, request, jsonify, render_template, send_from_directory
 from flask_cors import CORS
 from flask_socketio import SocketIO
@@ -55,11 +57,32 @@ def register_routes(app):
 
     @app.route('/')
     def index():
-            return render_template('index.html')
+        # --- 新增的照片读取逻辑开始 ---
+        # 1. 定义照片文件夹路径
+        photos_path = os.path.join(app.static_folder, 'photos')
+
+        # 2. 获取该目录下所有图片文件
+        photo_files = []
+        if os.path.exists(photos_path):
+            try:
+                all_files = os.listdir(photos_path)
+                # 只保留 jpg, jpeg, png, gif, bmp 等格式
+                photo_files = [
+                    f for f in all_files
+                    if f.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp'))
+                ]
+                photo_files.sort()  # 排序，保证展示顺序固定
+            except Exception as e:
+                logger.error(f"读取照片目录失败: {e}")
+
+        # --- 新增的照片读取逻辑结束 ---
+
+        # 3. 将 photo_files 传递给模板
+        return render_template('index.html', photos=photo_files)
 
     @app.route('/dashboard')
     def dashboard():
-            return render_template('index.html')
+            return index()
 
 
 def register_api_routes(app):
