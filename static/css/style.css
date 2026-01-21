@@ -102,9 +102,9 @@ body {
 }
 
 .hero-card { text-align: center; padding: 50px; max-width: 800px; width: 100%; }
-.logos-area { display: flex; justify-content: center; gap: 15px; margin-bottom: 25px; font-size: 0.9rem; color: rgba(255,255,255,0.8); }
+.logos-area { display: flex; justify-content: center; gap: 15px; margin-bottom: 25px; font-size: 1.5rem; color: rgba(255,255,255,0.8); }
 .divider-vertical { width: 1px; background: rgba(255,255,255,0.4); }
-.hero-badge { display: inline-block; background: #48bb78; padding: 5px 15px; border-radius: 20px; font-size: 0.85rem; margin-bottom: 20px; }
+.hero-badge { display: inline-block; background: #48bb78; padding: 5px 15px; border-radius: 20px; font-size: 1.4rem; margin-bottom: 20px; }
 
 .hero-title {
     font-size: 3rem; margin: 0 0 20px 0;
@@ -452,4 +452,108 @@ body {
     height: 100%;
     object-fit: cover;
     display: block;
+}
+
+/* =========================================
+   4. 新增：团队介绍分组样式 (Team Groups)
+   ========================================= */
+
+/* 团队介绍容器微调 */
+.team-intro {
+    margin-bottom: 30px;
+    padding: 30px; /* 增加内边距让内容不拥挤 */
+}
+
+/* 描述文字 */
+.team-desc {
+    margin-bottom: 25px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* 网格布局容器：电脑端三列，手机端单列 */
+.team-groups-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+}
+
+/* 单个小组卡片基础样式 */
+.group-card {
+    background: rgba(255, 255, 255, 0.08);
+    padding: 20px;
+    border-radius: 12px;
+    border-left: 4px solid transparent; /* 左侧彩条占位 */
+    transition: transform 0.3s ease, background 0.3s ease;
+}
+
+/* 鼠标悬停时的微动效 */
+.group-card:hover {
+    transform: translateY(-5px);
+    background: rgba(255, 255, 255, 0.12);
+}
+
+/* 小组标题 */
+.group-card h4 {
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 10px; /* 图标和文字间距 */
+}
+
+/* 角色块（负责人/成员）间距 */
+.role-block {
+    margin-bottom: 12px;
+}
+
+.role-block:last-child {
+    margin-bottom: 0;
+}
+
+/* "主负责人/成员" 小标题 */
+.role-title {
+    display: block;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.85rem;
+    margin-bottom: 4px;
+}
+
+/* 负责人名字 */
+.role-name {
+    font-size: 1.1rem;
+    color: white;
+}
+
+/* 成员名单 */
+.member-list {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+/* --- 各组特定配色 (左边框颜色 + 标题颜色) --- */
+
+/* 技术组 - 青色/科技感 */
+.group-tech {
+    border-color: #4fd1c5;
+}
+.group-tech h4 {
+    color: #4fd1c5;
+}
+
+/* 宣传组 - 橙色/活力感 */
+.group-publicity {
+    border-color: #f6ad55;
+}
+.group-publicity h4 {
+    color: #f6ad55;
+}
+
+/* 宣讲组 - 红色/热情感 */
+.group-presentation {
+    border-color: #fc8181;
+}
+.group-presentation h4 {
+    color: #fc8181;
 }

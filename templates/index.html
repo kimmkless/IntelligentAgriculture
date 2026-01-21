@@ -22,11 +22,11 @@
         <!-- 1. 顶部固定导航栏 -->
         <nav class="landing-nav glass-effect">
             <div class="nav-brand">
-                <span class="nav-logo">🌸 WHU IoT</span>
+                <span class="nav-logo">🚩 2026“E乡情”寒假实践</span>
             </div>
             <div class="nav-links">
                 <a href="#hero">首页</a>
-                <a href="#about-school">名校风采</a>
+                <a href="#about-school">院校风采</a>
                 <a href="#about-team">实践团队</a>
                 <button class="nav-btn-enter" onclick="enterSystem()">进入系统</button>
             </div>
@@ -34,9 +34,6 @@
 
         <!-- 背景层 (固定不动) -->
         <div class="landing-fixed-bg"></div>
-
-        <!-- 2. 内容滚动区域 -->
-        <!-- ... 上面的导航栏保持不变 ... -->
 
         <!-- 2. 内容滚动区域 -->
         <div class="scroll-content">
@@ -47,10 +44,10 @@
                     <div class="logos-area">
                         <div class="logo-item">🏛️ 武汉大学</div>
                         <div class="divider-vertical"></div>
-                        <div class="logo-item">💻 计算机学院</div>
+                        <div class="logo-item">💻 计算机学院“E乡情”实践队</div>
                     </div>
 
-                    <div class="hero-badge">202X年寒假社会实践成果</div>
+                    <div class="hero-badge">2026年寒假社会实践成果</div>
 
                     <h1 class="hero-title">智慧农业 · IoT环境监测系统</h1>
                     <p class="hero-subtitle">
@@ -58,7 +55,6 @@
                         解决传统农业数据采集难、实时性差痛点，助力乡村振兴。
                     </p>
 
-                    <!-- 【修改】移除了原本的大按钮，改为向下滚动的提示 -->
                     <div class="scroll-hint">
                         <p>👇 向下滚动探索团队风采</p>
                         <div class="arrow-down"></div>
@@ -68,7 +64,6 @@
 
             <!-- SECTION 2: 学校与学院介绍 (保持不变) -->
             <section id="about-school" class="info-section">
-                <!-- ... 原有代码保持不变 ... -->
                 <div class="section-container">
                      <h2 class="section-title">🏫 珞珈山下的学术殿堂</h2>
                      <div class="school-grid">
@@ -91,18 +86,65 @@
             <!-- SECTION 3: 【重点修改】团队与风采展示 -->
             <section id="about-team" class="info-section">
                 <div class="section-container wide-container"> <!-- 增加 wide-container 类 -->
-                    <h2 class="section-title">👥 “智慧耕耘”实践团队</h2>
+                    <h2 class="section-title">👥 “E乡情”实践团队</h2>
 
                     <!-- 文字介绍 -->
-                    <div class="team-intro glass-effect" style="margin-bottom: 30px;">
+                    <!-- 文字介绍与分组展示 -->
+                    <div class="team-intro glass-effect">
                         <h3>项目背景与分工</h3>
-                        <p>我们是来自武汉大学计算机学院的社会实践队伍。本项目旨在将计算机视觉与物联网技术应用于田间地头，通过低成本硬件实现环境数据的实时采集与分析。</p>
-                        <ul class="feature-list" style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 15px;">
-                            <li><strong>队长：</strong> XXX (统筹与全栈)</li>
-                            <li><strong>队员：</strong> XXX (嵌入式开发)</li>
-                            <li><strong>队员：</strong> XXX (数据可视化)</li>
-                            <li><strong>队员：</strong> XXX (实地调研)</li>
-                        </ul>
+                        <p class="team-desc">
+                            我们是来自武汉大学计算机学院的社会实践队伍。本项目旨在将计算机视觉与物联网技术应用于田间地头，通过低成本硬件实现环境数据的实时采集与分析。
+                        </p>
+
+                        <!-- 分组信息 Grid 布局 -->
+                        <div class="team-groups-grid">
+
+                            <!-- 技术组 -->
+                            <div class="group-card group-tech">
+                                <h4><span>💻</span> 技术组</h4>
+                                <div class="group-content">
+                                    <div class="role-block">
+                                        <span class="role-title">主负责人</span>
+                                        <strong class="role-name">刘炎轩</strong>
+                                    </div>
+                                    <div class="role-block">
+                                        <span class="role-title">成员</span>
+                                        <span class="member-list">高亦菲, 周可泽, 刘睿, 高锦松</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 宣传组 -->
+                            <div class="group-card group-publicity">
+                                <h4><span>📸</span> 宣传组</h4>
+                                <div class="group-content">
+                                    <div class="role-block">
+                                        <span class="role-title">主负责人</span>
+                                        <strong class="role-name">王依霖</strong>
+                                    </div>
+                                    <div class="role-block">
+                                        <span class="role-title">成员</span>
+                                        <span class="member-list">张一鸣, 苏梓凯, 孙艺蕾, 殷嘉忆</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 宣讲组 -->
+                            <div class="group-card group-presentation">
+                                <h4><span>🎤</span> 宣讲组</h4>
+                                <div class="group-content">
+                                    <div class="role-block">
+                                        <span class="role-title">主负责人</span>
+                                        <strong class="role-name">高一鸣</strong>
+                                    </div>
+                                    <div class="role-block">
+                                        <span class="role-title">成员</span>
+                                        <span class="member-list">董文卓, 马友会, 彭乔茜</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
                     </div>
 
                     <!-- === 媒体展示区域 === -->
