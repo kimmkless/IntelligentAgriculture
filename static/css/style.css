@@ -405,3 +405,51 @@ body {
     40% {transform: translateY(-10px);}
     60% {transform: translateY(-5px);}
 }
+
+/* 确保这段代码存在于你的 CSS 中 */
+.gallery-track {
+    display: flex;
+    gap: 30px;
+    width: max-content; /* 让宽度根据图片数量自动撑开 */
+    /* 这里的 scroll-left 动画必须配合 HTML 里的“两轮循环”使用 */
+    animation: scroll-left 30s linear infinite; /* 时间可以根据图片数量调整，比如 60s 更慢 */
+}
+
+@keyframes scroll-left {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        /* 这里的 -50% 是数学上的关键：
+           因为我们把图片列表复制了一份（总长是原来的2倍），
+           当移动了 50% 的距离时，显示的画面刚好和开头一模一样，
+           从而实现“看起来”无限循环的效果。 */
+        transform: translateX(-50%);
+    }
+}
+
+/* 其他样式保持不变... */
+.flowing-gallery-container {
+    width: 100%;
+    overflow: hidden;
+    padding: 20px 0;
+    position: relative;
+    mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+    -webkit-linear-gradient(left, transparent, black 5%, black 95%, transparent);
+}
+
+.gallery-card {
+    width: 300px;
+    flex-shrink: 0;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    /* ... */
+}
+
+.card-image-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}

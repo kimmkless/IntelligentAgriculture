@@ -105,52 +105,59 @@
                         </ul>
                     </div>
 
-                    <!-- 【新增】媒体展示区域 (照片 + 视频) -->
+                    <!-- === 媒体展示区域 === -->
                     <h3 style="color:white; margin-bottom: 20px; border-left: 4px solid #48bb78; padding-left: 10px;">📸 实践风采</h3>
 
-                    <div class="media-grid">
-                        <!-- 照片占位符 1 -->
-                        <div class="media-item photo-slot glass-effect">
-                            <div class="placeholder-content">
-                                <!-- 后续上传照片后，将 img 的 src 改为实际路径，去掉 hidden 类 -->
-                                <<img src="static/photos/photo1.jpg" alt="实践照片1"> >
-                                <div class="placeholder-text">
-                                    <span>🖼️</span><br>在此处插入团队合照
-                                </div>
-                            </div>
-                            <div class="caption">田间地头调研合影</div>
-                        </div>
+                    <!-- 1. 上半部分：流动相册 (代码保持不变，逻辑是占满整行) -->
+                    <div class="flowing-gallery-container">
+                        <div class="gallery-track">
 
-                        <!-- 照片占位符 2 -->
-                        <div class="media-item photo-slot glass-effect">
-                            <div class="placeholder-content">
-                                <!-- <img src="static/images/photo2.jpg" alt="实践照片2"> -->
-                                <div class="placeholder-text">
-                                    <span>🛠️</span><br>在此处插入设备调试照片
+                            <!-- 第一轮循环 -->
+                            {% for photo in photos %}
+                            <div class="gallery-card glass-effect">
+                                <div class="card-image-box">
+                                    <img src="{{ url_for('static', filename='photos/' + photo) }}" alt="实践照片">
                                 </div>
+                                <div class="caption">实践记录</div>
                             </div>
-                            <div class="caption">硬件设备调试现场</div>
-                        </div>
+                            {% endfor %}
 
-                        <!-- 视频占位符 -->
+                            <!-- 第二轮循环 (用于无缝滚动) -->
+                            {% if photos %}
+                                {% for photo in photos %}
+                                <div class="gallery-card glass-effect">
+                                    <div class="card-image-box">
+                                        <img src="{{ url_for('static', filename='photos/' + photo) }}" alt="实践照片">
+                                    </div>
+                                    <div class="caption">实践记录</div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="gallery-card glass-effect">
+                                    <div class="caption">暂无照片</div>
+                                </div>
+                            {% endif %}
+
+                        </div>
+                    </div>
+
+                    <!-- 2. 下半部分：视频展示 (独立出来，放在下方) -->
+                    <div class="video-section-wrapper">
+                        <!-- 视频卡片 -->
                         <div class="media-item video-slot glass-effect">
                             <div class="placeholder-content">
-                                <!-- 后续上传视频后，使用 video 标签 -->
-                                <!--
-                                <video controls>
-                                    <source src="static/videos/demo.mp4" type="video/mp4">
-                                    您的浏览器不支持视频标签
-                                </video>
-                                -->
+                                <!-- 这里可以放你的 <video> 标签 -->
+                                <!-- 暂时使用占位符 -->
                                 <div class="placeholder-text">
                                     <span>🎥</span><br>在此处插入实践纪录片/Demo视频
                                 </div>
                             </div>
-                            <div class="caption">项目成果演示视频</div>
+                            <div class="caption" style="font-size: 1.1rem; margin-top: 15px;">项目成果演示视频</div>
+                            </div>
                         </div>
                     </div>
-                </div>
             </section>
+                    <!-- === 替换结束 === -->
 
             <!-- 【新增】SECTION 4: 进入系统入口 (放在最后) -->
             <section id="entry-point" class="full-screen-section" style="min-height: 60vh;">
@@ -178,11 +185,19 @@
     <div id="mainDashboard" class="dashboard-container">
         <!-- 原有的 .container -->
         <div class="container">
+            <!-- 在 mainDashboard 内部找到 header -->
             <div class="header">
-                <div>
-                    <h1>🌱 IoT传感器数据监控系统</h1>
-                    <p>实时监控农业环境传感器数据</p>
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <!-- 新增：返回按钮 -->
+                    <button class="back-btn" onclick="exitSystem()">
+                        ⬅ 返回首页
+                    </button>
+                    <div>
+                        <h1>🌱 IoT传感器数据监控系统</h1>
+                        <p>实时监控农业环境传感器数据</p>
+                    </div>
                 </div>
+
                 <div class="status-badge" id="systemStatus">
                     系统运行中
                 </div>
@@ -309,23 +324,24 @@
                     <div class="api-endpoint">
                         GET /api/data/latest?device_id={id}&limit={n} - 获取最新数据
                     </div>
-                    <div class="api-endpoint">
-                        GET /api/data/history?device_id={id}&hours={h} - 获取历史数据
+                        <div class="api-endpoint">
+                            GET /api/data/history?device_id={id}&hours={h} - 获取历史数据
+                        </div>
+                        <div class="api-endpoint">
+                            GET /api/statistics/device/{device_id} - 获取设备统计
+                        </div>
+                        <div class="api-endpoint">
+                            GET /api/system/status - 获取系统状态
+                        </div>
                     </div>
-                    <div class="api-endpoint">
-                        GET /api/statistics/device/{device_id} - 获取设备统计
-                    </div>
-                    <div class="api-endpoint">
-                        GET /api/system/status - 获取系统状态
-                    </div>
-                </div>
             </div>
 
-            <!-- 刷新按钮 -->
-            <button class="refresh-btn" onclick="refreshData()">
-                🔄 刷新数据
-            </button>
+                <!-- 刷新按钮 -->
+                <button class="refresh-btn" onclick="refreshData()">
+                    🔄 刷新数据
+                </button>
         </div>
+    </div>
     </div>
     <!-- End of Dashboard Container -->
 
