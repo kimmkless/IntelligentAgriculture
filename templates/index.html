@@ -1,172 +1,377 @@
-<!-- 在head部分确保正确加载Chart.js -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IoT传感器数据监控系统</title>
+    <title>IoT传感器数据监控系统 - 武汉大学计算机学院</title>
+    <!-- 引入原有CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <!-- 确保Chart.js正确加载 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- 【新增】内联样式，为了实现封面和转场效果 -->
+    <!-- 建议后期将这部分移动到 style.css 中 -->
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div>
-                <h1>🌱 IoT传感器数据监控系统</h1>
-                <p>实时监控农业环境传感器数据</p>
+    <!-- ========================================== -->
+    <!-- ========================================== -->
+    <!-- 第一部分：增强版滚动封面页 (Landing Page) -->
+    <!-- ========================================== -->
+    <div id="landingPage" class="landing-scroll-container">
+
+        <!-- 1. 顶部固定导航栏 -->
+        <nav class="landing-nav glass-effect">
+            <div class="nav-brand">
+                <span class="nav-logo">🌸 WHU IoT</span>
             </div>
-            <div class="status-badge" id="systemStatus">
-                系统运行中
+            <div class="nav-links">
+                <a href="#hero">首页</a>
+                <a href="#about-school">名校风采</a>
+                <a href="#about-team">实践团队</a>
+                <button class="nav-btn-enter" onclick="enterSystem()">进入系统</button>
             </div>
+        </nav>
+
+        <!-- 背景层 (固定不动) -->
+        <div class="landing-fixed-bg"></div>
+
+        <!-- 2. 内容滚动区域 -->
+        <!-- ... 上面的导航栏保持不变 ... -->
+
+        <!-- 2. 内容滚动区域 -->
+        <div class="scroll-content">
+
+            <!-- SECTION 1: 首屏 (Hero) -->
+            <section id="hero" class="full-screen-section">
+                <div class="hero-card glass-effect animate-up">
+                    <div class="logos-area">
+                        <div class="logo-item">🏛️ 武汉大学</div>
+                        <div class="divider-vertical"></div>
+                        <div class="logo-item">💻 计算机学院</div>
+                    </div>
+
+                    <div class="hero-badge">202X年寒假社会实践成果</div>
+
+                    <h1 class="hero-title">智慧农业 · IoT环境监测系统</h1>
+                    <p class="hero-subtitle">
+                        基于 <strong>Flask + MQTT + Edge Computing</strong> 的精准农业解决方案。<br>
+                        解决传统农业数据采集难、实时性差痛点，助力乡村振兴。
+                    </p>
+
+                    <!-- 【修改】移除了原本的大按钮，改为向下滚动的提示 -->
+                    <div class="scroll-hint">
+                        <p>👇 向下滚动探索团队风采</p>
+                        <div class="arrow-down"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2: 学校与学院介绍 (保持不变) -->
+            <section id="about-school" class="info-section">
+                <!-- ... 原有代码保持不变 ... -->
+                <div class="section-container">
+                     <h2 class="section-title">🏫 珞珈山下的学术殿堂</h2>
+                     <div class="school-grid">
+                        <!-- 武汉大学卡片 -->
+                        <div class="info-card glass-effect">
+                            <div class="card-icon">🌸</div>
+                            <h3>武汉大学</h3>
+                            <p class="card-desc">"自强、弘毅、求是、拓新"</p>
+                        </div>
+                        <!-- 计算机学院卡片 -->
+                        <div class="info-card glass-effect">
+                            <div class="card-icon">🖥️</div>
+                            <h3>计算机学院</h3>
+                            <p class="card-desc">依托学院物联网实验室技术支持。</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 3: 【重点修改】团队与风采展示 -->
+            <section id="about-team" class="info-section">
+                <div class="section-container wide-container"> <!-- 增加 wide-container 类 -->
+                    <h2 class="section-title">👥 “智慧耕耘”实践团队</h2>
+
+                    <!-- 文字介绍 -->
+                    <div class="team-intro glass-effect" style="margin-bottom: 30px;">
+                        <h3>项目背景与分工</h3>
+                        <p>我们是来自武汉大学计算机学院的社会实践队伍。本项目旨在将计算机视觉与物联网技术应用于田间地头，通过低成本硬件实现环境数据的实时采集与分析。</p>
+                        <ul class="feature-list" style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 15px;">
+                            <li><strong>队长：</strong> XXX (统筹与全栈)</li>
+                            <li><strong>队员：</strong> XXX (嵌入式开发)</li>
+                            <li><strong>队员：</strong> XXX (数据可视化)</li>
+                            <li><strong>队员：</strong> XXX (实地调研)</li>
+                        </ul>
+                    </div>
+
+                    <!-- === 媒体展示区域 === -->
+                    <h3 style="color:white; margin-bottom: 20px; border-left: 4px solid #48bb78; padding-left: 10px;">📸 实践风采</h3>
+
+                    <!-- 1. 上半部分：流动相册 (代码保持不变，逻辑是占满整行) -->
+                    <div class="flowing-gallery-container">
+                        <div class="gallery-track">
+
+                            <!-- 第一轮循环 -->
+                            {% for photo in photos %}
+                            <div class="gallery-card glass-effect">
+                                <div class="card-image-box">
+                                    <img src="{{ url_for('static', filename='photos/' + photo) }}" alt="实践照片">
+                                </div>
+                                <div class="caption">实践记录</div>
+                            </div>
+                            {% endfor %}
+
+                            <!-- 第二轮循环 (用于无缝滚动) -->
+                            {% if photos %}
+                                {% for photo in photos %}
+                                <div class="gallery-card glass-effect">
+                                    <div class="card-image-box">
+                                        <img src="{{ url_for('static', filename='photos/' + photo) }}" alt="实践照片">
+                                    </div>
+                                    <div class="caption">实践记录</div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="gallery-card glass-effect">
+                                    <div class="caption">暂无照片</div>
+                                </div>
+                            {% endif %}
+
+                        </div>
+                    </div>
+
+                    <!-- 2. 下半部分：视频展示 (独立出来，放在下方) -->
+                    <div class="video-section-wrapper">
+                        <!-- 视频卡片 -->
+                        <div class="media-item video-slot glass-effect">
+                            <div class="placeholder-content">
+                                <!-- 这里可以放你的 <video> 标签 -->
+                                <!-- 暂时使用占位符 -->
+                                <div class="placeholder-text">
+                                    <span>🎥</span><br>在此处插入实践纪录片/Demo视频
+                                </div>
+                            </div>
+                            <div class="caption" style="font-size: 1.1rem; margin-top: 15px;">项目成果演示视频</div>
+                            </div>
+                        </div>
+                    </div>
+            </section>
+                    <!-- === 替换结束 === -->
+
+            <!-- 【新增】SECTION 4: 进入系统入口 (放在最后) -->
+            <section id="entry-point" class="full-screen-section" style="min-height: 60vh;">
+                <div class="hero-card glass-effect">
+                    <h2>已了解完毕？</h2>
+                    <p style="margin-bottom: 30px; color: rgba(255,255,255,0.8);">
+                        点击下方按钮，连接至 IoT 监控中心，查看实时环境数据。
+                    </p>
+                    <button class="main-cta-btn big-pulse" onclick="enterSystem()">
+                        🚀 启动监控中心
+                    </button>
+                </div>
+            </section>
+
+            <!-- 底部版权 -->
+            <footer class="landing-footer">
+                <p>&copy; 202X 武汉大学计算机学院社会实践队 | Designed with ❤️</p>
+            </footer>
         </div>
-
-        <div class="grid">
-            <!-- 系统概览卡片 -->
-            <div class="card">
-                <h2><i>📊</i> 系统概览</h2>
-                <div id="systemOverview">
-                    <div class="stat-item">
-                        <span class="stat-label">在线设备</span>
-                        <span class="stat-value" id="onlineDevices">0</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">今日数据量</span>
-                        <span class="stat-value" id="todayData">0</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">系统运行</span>
-                        <span class="stat-value" id="uptime" data-uptime-seconds="0">计算中...</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 环境数据卡片 -->
-            <div class="card">
-                <h2><i>🌡️</i> 环境数据</h2>
-                <div id="environmentData">
-                    <div class="stat-item">
-                        <span class="stat-label">温度</span>
-                        <span class="stat-value" id="temperature">-- °C</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">湿度</span>
-                        <span class="stat-value" id="humidity">-- %</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">PM2.5</span>
-                        <span class="stat-value" id="pm25">-- μg/m³</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">光照</span>
-                        <span class="stat-value" id="light">-- lux</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 通信状态卡片 -->
-            <div class="card">
-                <h2><i>📡</i> 通信状态</h2>
-                <div id="communicationStatus">
-                    <div class="stat-item">
-                        <span class="stat-label">MQTT连接</span>
-                        <span class="stat-value" id="mqttStatus">离线</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">数据完整性</span>
-                        <span class="stat-value" id="dataIntegrity">-- %</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">数据质量</span>
-                        <span class="stat-value" id="dataQuality">-- %</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 温度趋势图表 -->
-        <div class="card">
-            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-                <h2><i>📈</i> 温度趋势</h2>
-                <div class="time-selector">
-                    <select id="timeRange" onchange="handleTimeChange()">
-                        <option value="1">最近 1 小时</option>
-                        <option value="4">最近 4 小时</option>
-                        <option value="24">最近 1 天</option>
-                        <option value="168">最近 1 周</option>
-                        <option value="720">最近 1 月</option>
-                    </select>
-                    <div id="chartInfo" style="font-size: 12px; color: #718096; margin-top: 5px; text-align: right;">
-                        加载中...
-                    </div>
-                </div>
-            </div>
-            <div class="chart-container">
-                <!-- 添加一个id用于调试 -->
-                <canvas id="temperatureChart" style="width: 100%; height: 300px;"></canvas>
-                <!-- 添加一个调试信息区域 -->
-                <div id="chartDebug" style="font-size: 10px; color: #999; margin-top: 5px; text-align: center;">
-                    图表状态: 初始化中...
-                </div>
-            </div>
-        </div>
-
-        <!-- 最新数据表格 -->
-        <div class="card">
-            <h2><i>📋</i> 最新数据</h2>
-            <table class="data-table" id="latestData">
-                <thead>
-                    <tr>
-                        <th>时间</th>
-                        <th>设备</th>
-                        <th>温度(°C)</th>
-                        <th>湿度(%)</th>
-                        <th>PM2.5</th>
-                        <th>光照(lux)</th>
-                    </tr>
-                </thead>
-                <tbody id="dataTableBody">
-                    <!-- 数据将通过JavaScript填充 -->
-                </tbody>
-            </table>
-        </div>
-
-        <!-- API接口信息 -->
-        <div class="card">
-            <h2><i>🔌</i> API接口</h2>
-            <div class="api-info">
-                <h3>RESTful API端点</h3>
-                <div class="api-endpoint">
-                    GET /api/devices - 获取所有设备列表
-                </div>
-                <div class="api-endpoint">
-                    GET /api/data/latest?device_id={id}&limit={n} - 获取最新数据
-                </div>
-                <div class="api-endpoint">
-                    GET /api/data/history?device_id={id}&hours={h} - 获取历史数据
-                </div>
-                <div class="api-endpoint">
-                    GET /api/statistics/device/{device_id} - 获取设备统计
-                </div>
-                <div class="api-endpoint">
-                    GET /api/system/status - 获取系统状态
-                </div>
-            </div>
-        </div>
-
-        <!-- 刷新按钮 -->
-        <button class="refresh-btn" onclick="refreshData()">
-            🔄 刷新数据
-        </button>
     </div>
 
-    <!-- 确保main.js在Chart.js之后加载 -->
+    <!-- ========================================== -->
+    <!-- 第二部分：数据监控系统 (原代码包裹在这里) -->
+    <!-- ========================================== -->
+    <div id="mainDashboard" class="dashboard-container">
+        <!-- 原有的 .container -->
+        <div class="container">
+            <!-- 在 mainDashboard 内部找到 header -->
+            <div class="header">
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <!-- 新增：返回按钮 -->
+                    <button class="back-btn" onclick="exitSystem()">
+                        ⬅ 返回首页
+                    </button>
+                    <div>
+                        <h1>🌱 IoT传感器数据监控系统</h1>
+                        <p>实时监控农业环境传感器数据</p>
+                    </div>
+                </div>
+
+                <div class="status-badge" id="systemStatus">
+                    系统运行中
+                </div>
+            </div>
+
+            <div class="grid">
+                <!-- 系统概览卡片 -->
+                <div class="card">
+                    <h2><i>📊</i> 系统概览</h2>
+                    <div id="systemOverview">
+                        <div class="stat-item">
+                            <span class="stat-label">在线设备</span>
+                            <span class="stat-value" id="onlineDevices">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">今日数据量</span>
+                            <span class="stat-value" id="todayData">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">系统运行</span>
+                            <span class="stat-value" id="uptime" data-uptime-seconds="0">计算中...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 环境数据卡片 -->
+                <div class="card">
+                    <h2><i>🌡️</i> 环境数据</h2>
+                    <div id="environmentData">
+                        <div class="stat-item">
+                            <span class="stat-label">温度</span>
+                            <span class="stat-value" id="temperature">-- °C</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">湿度</span>
+                            <span class="stat-value" id="humidity">-- %</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">PM2.5</span>
+                            <span class="stat-value" id="pm25">-- μg/m³</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">光照</span>
+                            <span class="stat-value" id="light">-- lux</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 通信状态卡片 -->
+                <div class="card">
+                    <h2><i>📡</i> 通信状态</h2>
+                    <div id="communicationStatus">
+                        <div class="stat-item">
+                            <span class="stat-label">MQTT连接</span>
+                            <span class="stat-value" id="mqttStatus">离线</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">数据完整性</span>
+                            <span class="stat-value" id="dataIntegrity">-- %</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">数据质量</span>
+                            <span class="stat-value" id="dataQuality">-- %</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 温度趋势图表 -->
+            <div class="card">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2><i>📈</i> 温度趋势</h2>
+                    <div class="time-selector">
+                        <select id="timeRange" onchange="handleTimeChange()">
+                            <option value="1">最近 1 小时</option>
+                            <option value="4">最近 4 小时</option>
+                            <option value="24">最近 1 天</option>
+                            <option value="168">最近 1 周</option>
+                            <option value="720">最近 1 月</option>
+                        </select>
+                        <div id="chartInfo" style="font-size: 12px; color: #718096; margin-top: 5px; text-align: right;">
+                            加载中...
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <!-- 添加一个id用于调试 -->
+                    <canvas id="temperatureChart" style="width: 100%; height: 300px;"></canvas>
+                    <!-- 添加一个调试信息区域 -->
+                    <div id="chartDebug" style="font-size: 10px; color: #999; margin-top: 5px; text-align: center;">
+                        图表状态: 初始化中...
+                    </div>
+                </div>
+            </div>
+
+            <!-- 最新数据表格 -->
+            <div class="card">
+                <h2><i>📋</i> 最新数据</h2>
+                <table class="data-table" id="latestData">
+                    <thead>
+                        <tr>
+                            <th>时间</th>
+                            <th>设备</th>
+                            <th>温度(°C)</th>
+                            <th>湿度(%)</th>
+                            <th>PM2.5</th>
+                            <th>光照(lux)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTableBody">
+                        <!-- 数据将通过JavaScript填充 -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- API接口信息 -->
+            <div class="card">
+                <h2><i>🔌</i> API接口</h2>
+                <div class="api-info">
+                    <h3>RESTful API端点</h3>
+                    <div class="api-endpoint">
+                        GET /api/devices - 获取所有设备列表
+                    </div>
+                    <div class="api-endpoint">
+                        GET /api/data/latest?device_id={id}&limit={n} - 获取最新数据
+                    </div>
+                        <div class="api-endpoint">
+                            GET /api/data/history?device_id={id}&hours={h} - 获取历史数据
+                        </div>
+                        <div class="api-endpoint">
+                            GET /api/statistics/device/{device_id} - 获取设备统计
+                        </div>
+                        <div class="api-endpoint">
+                            GET /api/system/status - 获取系统状态
+                        </div>
+                    </div>
+            </div>
+
+                <!-- 刷新按钮 -->
+                <button class="refresh-btn" onclick="refreshData()">
+                    🔄 刷新数据
+                </button>
+        </div>
+    </div>
+    </div>
+    <!-- End of Dashboard Container -->
+
+    <!-- JS引用保持不变 -->
     <script>
         console.log("开始加载main.js...");
     </script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script>
         console.log("main.js加载完成");
+
+        // === 新增：处理页面进入逻辑的脚本 ===
+        function enterSystem() {
+            const landing = document.getElementById('landingPage');
+            const dashboard = document.getElementById('mainDashboard');
+
+            // 1. 封面向上滑走
+            landing.classList.add('hidden');
+
+            // 2. 仪表盘取消模糊，变为活跃状态
+            dashboard.classList.add('active');
+
+            // 3. 延迟一小会儿触发数据刷新，确保图表渲染在可见区域
+            setTimeout(() => {
+                if (typeof refreshData === 'function') {
+                    console.log("Entering system, refreshing data...");
+                    refreshData();
+                }
+            }, 800);
+        }
     </script>
 </body>
 </html>

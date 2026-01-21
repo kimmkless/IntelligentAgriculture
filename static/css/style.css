@@ -1,61 +1,208 @@
-/* 基本样式 - 可以基于原HTML模板中的样式创建 */
+/* =========================================
+   1. 全局基础设置 (Base Setup)
+   ========================================= */
+:root {
+    --primary-color: #48bb78;  /* 核心绿 */
+    --text-dark: #2d3748;      /* 深色文字 */
+    --text-light: #718096;     /* 浅色文字 */
+    --bg-gray: #f7fafc;        /* 后台背景灰 */
+    --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Segoe UI', Arial, sans-serif;
 }
 
 body {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    min-height: 100vh;
-    padding: 20px;
-    color: #333;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: var(--bg-gray); /* 默认背景色给后台用 */
+    color: var(--text-dark);
+    line-height: 1.5;
 }
 
+/* =========================================
+   2. 首页 Landing Page 样式 (保留你刚才的代码)
+   ========================================= */
+.landing-scroll-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    z-index: 9999;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    color: white;
+    transition: transform 0.8s cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+.landing-fixed-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* 这里使用了渐变，建议按需换成图片 */
+    background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+    z-index: -1;
+}
+
+.landing-scroll-container.hidden {
+    transform: translateY(-100%); /* 核心：首页向上滑走的动画 */
+}
+
+/* --- 毛玻璃通用类 --- */
+.glass-effect {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+    border-radius: 16px;
+}
+
+/* --- 导航栏 --- */
+.landing-nav {
+    position: sticky;
+    top: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 5%;
+    z-index: 100;
+    border-radius: 0 0 16px 16px;
+    border-top: none;
+}
+
+.nav-logo { font-weight: bold; font-size: 1.2rem; letter-spacing: 1px; }
+.nav-links { display: flex; align-items: center; gap: 25px; }
+.nav-links a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.95rem; transition: color 0.3s; }
+.nav-links a:hover { color: #48bb78; }
+
+.nav-btn-enter {
+    padding: 8px 20px;
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.nav-btn-enter:hover { background: #48bb78; border-color: #48bb78; }
+
+/* --- 首页各区块 --- */
+.full-screen-section {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 80px 20px;
+}
+
+.hero-card { text-align: center; padding: 50px; max-width: 800px; width: 100%; }
+.logos-area { display: flex; justify-content: center; gap: 15px; margin-bottom: 25px; font-size: 0.9rem; color: rgba(255,255,255,0.8); }
+.divider-vertical { width: 1px; background: rgba(255,255,255,0.4); }
+.hero-badge { display: inline-block; background: #48bb78; padding: 5px 15px; border-radius: 20px; font-size: 0.85rem; margin-bottom: 20px; }
+
+.hero-title {
+    font-size: 3rem; margin: 0 0 20px 0;
+    background: linear-gradient(to right, #ffffff, #a7f3d0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.hero-subtitle { font-size: 1.1rem; line-height: 1.8; color: rgba(255,255,255,0.85); margin-bottom: 40px; }
+.hero-actions { display: flex; justify-content: center; gap: 20px; align-items: center; }
+
+.main-cta-btn {
+    padding: 15px 40px; font-size: 1.1rem; background: white; color: #0f2027;
+    border: none; border-radius: 50px; cursor: pointer; font-weight: bold;
+    box-shadow: 0 0 20px rgba(255,255,255,0.3); transition: transform 0.2s;
+}
+.main-cta-btn:hover { transform: scale(1.05); }
+.secondary-btn { color: white; text-decoration: none; border-bottom: 1px solid white; padding-bottom: 2px; }
+
+.info-section { padding: 100px 5%; min-height: 80vh; display: flex; align-items: center; }
+.section-container { max-width: 1000px; margin: 0 auto; width: 100%; }
+.section-title { font-size: 2rem; margin-bottom: 50px; text-align: center; position: relative; }
+.section-title::after { content: ''; display: block; width: 60px; height: 4px; background: #48bb78; margin: 15px auto 0; border-radius: 2px; }
+
+.school-grid, .team-layout { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
+.info-card, .team-info, .tech-stack { padding: 30px; transition: transform 0.3s; }
+.info-card:hover { transform: translateY(-10px); background: rgba(255,255,255,0.15); }
+.card-icon { font-size: 3rem; margin-bottom: 20px; }
+.feature-list { list-style: none; padding: 0; line-height: 2; }
+.tech-tags { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+.tag { background: rgba(0,0,0,0.3); padding: 5px 12px; border-radius: 6px; font-size: 0.9rem; border: 1px solid rgba(255,255,255,0.1); }
+.landing-footer { text-align: center; padding: 40px; color: rgba(255,255,255,0.4); font-size: 0.9rem; }
+@keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+.big-pulse { animation: pulse 2s infinite; }
+
+
+/* =========================================
+   3. 数据后台 Dashboard 样式 (核心补全部分)
+   ========================================= */
+
+/* 这是用来包裹后台所有内容的容器，用于做进场动画 */
+.dashboard-container {
+    padding: 20px;
+    opacity: 0;
+    filter: blur(10px);
+    transform: scale(0.95);
+    transition: all 0.8s ease;
+    /* 初始状态不可见，防止遮挡首页 */
+    height: 0;
+    overflow: hidden;
+}
+
+/* 当通过JS加上 .active 类后，后台显示 */
+.dashboard-container.active {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+    height: auto;
+    overflow: visible;
+}
+
+/* --- 后台布局结构 --- */
 .container {
-    max-width: 1400px;
+    max-width: 1200px;
     margin: 0 auto;
 }
 
 .header {
-    background: white;
-    padding: 30px;
-    border-radius: 15px;
-    margin-bottom: 20px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e2e8f0;
 }
 
-.header h1 {
-    color: #4a5568;
-    font-size: 2.5rem;
-    margin-bottom: 10px;
-}
-
-.header p {
-    color: #718096;
-    font-size: 1.1rem;
-}
+.header h1 { color: #2d3748; font-size: 1.8rem; }
+.header p { color: #718096; margin-top: 5px; }
 
 .status-badge {
-    background: #48bb78;
-    color: white;
-    padding: 8px 20px;
+    background-color: #c6f6d5;
+    color: #22543d;
+    padding: 8px 16px;
     border-radius: 20px;
     font-weight: bold;
     display: inline-flex;
     align-items: center;
 }
-
 .status-badge::before {
-    content: "●";
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background-color: #48bb78;
+    border-radius: 50%;
     margin-right: 8px;
-    font-size: 12px;
 }
 
+/* --- 卡片式 Grid 布局 --- */
 .grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -65,267 +212,244 @@ body {
 
 .card {
     background: white;
-    border-radius: 15px;
-    padding: 25px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-    transition: transform 0.3s ease;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .card:hover {
-    transform: translateY(-5px);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
 .card h2 {
-    color: #4a5568;
-    font-size: 1.5rem;
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-}
-
-.card h2 i {
-    margin-right: 10px;
-    font-size: 1.2rem;
-}
-
-.stat-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 0;
-    border-bottom: 1px solid #e2e8f0;
-}
-
-.stat-item:last-child {
-    border-bottom: none;
-}
-
-.stat-label {
-    color: #718096;
-    font-size: 0.95rem;
-}
-
-.stat-value {
-    color: #4a5568;
-    font-weight: bold;
     font-size: 1.1rem;
-}
-
-.data-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-}
-
-.data-table th {
-    background: #f7fafc;
     color: #4a5568;
-    font-weight: 600;
-    padding: 15px;
-    text-align: left;
-    border-bottom: 2px solid #e2e8f0;
-}
-
-.data-table td {
-    padding: 15px;
-    border-bottom: 1px solid #e2e8f0;
-    color: #4a5568;
-}
-
-.data-table tr:hover {
-    background: #f7fafc;
-}
-
-.api-info {
-    background: #f0f9ff;
-    border-left: 4px solid #4299e1;
-    padding: 15px;
-    border-radius: 0 8px 8px 0;
-    margin-top: 20px;
-}
-
-.api-info h3 {
-    color: #2c5282;
-    margin-bottom: 10px;
-}
-
-.api-endpoint {
-    background: #edf2f7;
-    padding: 10px;
-    border-radius: 6px;
-    font-family: 'Courier New', monospace;
-    margin: 10px 0;
-    font-size: 0.9rem;
-    color: #2d3748;
-}
-
-.refresh-btn {
-    background: #4299e1;
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background 0.3s ease;
-    margin-top: 20px;
-}
-
-.refresh-btn:hover {
-    background: #3182ce;
-}
-
-.chart-container {
-    height: 300px;
-    margin-top: 20px;
-}
-
-@media (max-width: 768px) {
-    .grid {
-        grid-template-columns: 1fr;
-    }
-
-    .header {
-        flex-direction: column;
-        text-align: center;
-    }
-}
-.stat-item .stat-value {
-    color: #4a5568;
-    font-weight: bold;
-    font-size: 1.1rem;
-    transition: color 0.3s ease;
-}
-
-/* MQTT状态颜色 */
-#mqttStatus {
-    font-weight: bold;
-}
-
-/* 数据完整性指示器 */
-#dataIntegrity, #dataQuality {
-    font-weight: bold;
-}
-
-/* 系统状态徽章动画 */
-.status-badge {
-    background: #48bb78;
-    color: white;
-    padding: 8px 20px;
-    border-radius: 20px;
-    font-weight: bold;
-    display: inline-flex;
-    align-items: center;
-    transition: all 0.3s ease;
-}
-
-.status-badge::before {
-    content: "●";
-    margin-right: 8px;
-    font-size: 12px;
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
-}
-
-/* 时间选择器样式 */
-.time-selector select {
-    padding: 8px 15px;
-    border-radius: 8px;
-    border: 2px solid #e2e8f0;
-    background: white;
-    color: #4a5568;
-    font-size: 14px;
-    cursor: pointer;
-    transition: border-color 0.3s ease;
-}
-
-.time-selector select:hover {
-    border-color: #4299e1;
-}
-
-.time-selector select:focus {
-    outline: none;
-    border-color: #4299e1;
-    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
-}
-
-/* 表格中的时间列 */
-.data-table td:first-child {
-    font-family: 'Courier New', monospace;
-    font-size: 0.9rem;
-    color: #718096;
-}
-
-.chart-container {
-    height: 400px;
-    margin-top: 20px;
-    position: relative;
-}
-
-.time-selector {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-}
-
-.time-selector select {
-    padding: 8px 15px;
-    border-radius: 8px;
-    border: 2px solid #e2e8f0;
-    background: white;
-    color: #4a5568;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    min-width: 120px;
-}
-
-.time-selector select:hover:not(:disabled) {
-    border-color: #4299e1;
-}
-
-.time-selector select:focus {
-    outline: none;
-    border-color: #4299e1;
-    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
-}
-
-.time-selector select:disabled {
-    background-color: #f7fafc;
-    color: #a0aec0;
-    cursor: not-allowed;
-}
-
-.card-header {
-    padding-bottom: 15px;
-    border-bottom: 1px solid #e2e8f0;
     margin-bottom: 20px;
-}
-
-/* 图表标题样式 */
-.card-header h2 {
-    margin: 0;
     display: flex;
     align-items: center;
     gap: 10px;
 }
 
-/* 数据点标签样式 */
-.chartjs-tooltip {
-    background-color: rgba(0, 0, 0, 0.8) !important;
-    border-radius: 6px !important;
-    padding: 10px !important;
-    font-family: 'Segoe UI', Arial, sans-serif !important;
+.card h2 i { font-style: normal; }
+
+/* --- 数据统计项 --- */
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #edf2f7;
 }
 
-/* 图例样式 */
-.chartjs-legend {
+.stat-item:last-child { border-bottom: none; }
+
+.stat-label { color: #718096; font-size: 0.95rem; }
+.stat-value { font-weight: bold; font-size: 1.1rem; color: #2d3748; }
+
+/* --- 表格样式 --- */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.data-table th, .data-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #edf2f7;
+}
+
+.data-table th {
+    background-color: #f7fafc;
+    color: #4a5568;
+    font-weight: 600;
+}
+
+.data-table tr:hover { background-color: #f8fafc; }
+
+/* --- API 信息块 --- */
+.api-endpoint {
+    background: #2d3748;
+    color: #63b3ed;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    font-family: monospace;
+    font-size: 0.9rem;
+    overflow-x: auto;
+}
+
+/* --- 刷新按钮 --- */
+.refresh-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 15px 25px;
+    border-radius: 30px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.4);
+    transition: all 0.3s;
+    z-index: 50;
+}
+
+.refresh-btn:hover {
+    background-color: #38a169;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(72, 187, 120, 0.6);
+}
+
+/* --- 图表容器 --- */
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+/* ...保留之前的 CSS... */
+
+/* --- 新增：媒体展示区域样式 --- */
+.wide-container {
+    max-width: 1200px; /* 让团队介绍部分更宽，方便放照片 */
+}
+
+.media-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+    margin-top: 20px;
+}
+
+.media-item {
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* 占位符容器 */
+.placeholder-content {
+    background: rgba(0, 0, 0, 0.2);
+    border: 2px dashed rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    width: 100%;
+    /* 16:9 比例的高度计算 */
+    aspect-ratio: 16 / 9;
     display: flex;
     justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+}
+
+.placeholder-text {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9rem;
+}
+
+.placeholder-text span {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.caption {
     margin-top: 10px;
+    text-align: center;
+    font-size: 0.9rem;
+    color: #a7f3d0; /* 浅绿色文字 */
+    font-weight: bold;
+}
+
+/* 实际图片和视频的样式 (配合后续上传) */
+.placeholder-content img,
+.placeholder-content video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* 保证填满框且不变形 */
+    display: block;
+}
+
+/* 视频区域通常占两格宽 (如果在宽屏下) */
+@media (min-width: 768px) {
+    .video-slot {
+        grid-column: span 2; /* 让视频占两列宽度，更显眼 */
+    }
+}
+
+/* --- 修改：首屏滚动提示 --- */
+.scroll-hint {
+    margin-top: 40px;
+    color: rgba(255, 255, 255, 0.7);
+    animation: bounce 2s infinite;
+}
+
+.arrow-down {
+    width: 15px;
+    height: 15px;
+    border-right: 2px solid white;
+    border-bottom: 2px solid white;
+    transform: rotate(45deg);
+    margin: 10px auto;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+    40% {transform: translateY(-10px);}
+    60% {transform: translateY(-5px);}
+}
+
+/* 确保这段代码存在于你的 CSS 中 */
+.gallery-track {
+    display: flex;
+    gap: 30px;
+    width: max-content; /* 让宽度根据图片数量自动撑开 */
+    /* 这里的 scroll-left 动画必须配合 HTML 里的“两轮循环”使用 */
+    animation: scroll-left 30s linear infinite; /* 时间可以根据图片数量调整，比如 60s 更慢 */
+}
+
+@keyframes scroll-left {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        /* 这里的 -50% 是数学上的关键：
+           因为我们把图片列表复制了一份（总长是原来的2倍），
+           当移动了 50% 的距离时，显示的画面刚好和开头一模一样，
+           从而实现“看起来”无限循环的效果。 */
+        transform: translateX(-50%);
+    }
+}
+
+/* 其他样式保持不变... */
+.flowing-gallery-container {
+    width: 100%;
+    overflow: hidden;
+    padding: 20px 0;
+    position: relative;
+    mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+    -webkit-linear-gradient(left, transparent, black 5%, black 95%, transparent);
+}
+
+.gallery-card {
+    width: 300px;
+    flex-shrink: 0;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    /* ... */
+}
+
+.card-image-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
